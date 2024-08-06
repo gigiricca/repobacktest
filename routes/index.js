@@ -1,25 +1,19 @@
 const express = require("express");
 const router = express.Router();
 
-const clienteController = require("../controllers/clienteController");
-const eventoController = require("../controllers/eventoController");
-const menuController = require("../controllers/menuController");
-const reservaController = require("../controllers/reservaController");
+const productoController = require("../controllers/productoController");
+const categoriaController = require('../controllers/categoriaController.js');
 
-// Rutas para clientes
-router.get("/clientes", clienteController.getAllClientes);
-router.post("/clientes", clienteController.createCliente);
+// Rutas para productos
+router.get("/productos", productoController.getAllProductos); //Query params page y pageSize
+router.get('/productos/:id', productoController.getProductoById); 
+router.post("/productos", productoController.createProducto);
+router.put('/productos/:id', productoController.updateProducto);
+router.delete('/productos/:id', productoController.deleteProducto);
 
-// Rutas para eventos
-router.get("/eventos", eventoController.getAllEventos);
-router.post("/eventos", eventoController.createEvento);
-
-// Rutas para menús
-router.get("/menus", menuController.getAllMenus);
-router.post("/menus", menuController.createMenu);
-
-// Rutas para reservas
-router.get("/reservas", reservaController.getAllReservas);
-router.post("/reservas", reservaController.createReserva);
+router.get('/categorias', categoriaController.getAllCategorias);
+router.post('/categorias', categoriaController.createCategoria);
+router.put('/categorias/:id', categoriaController.updateCategoria);
+router.delete('/categorias/:id', categoriaController.deleteCategoria);
 
 module.exports = router;
