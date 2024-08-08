@@ -2,17 +2,21 @@
 const Producto = require("../models/producto");
 const Imagen = require("../models/imagen");
 const sequelize = require("../config/database");
+const Sequelize = require('sequelize');
 
 exports.getAllProductos = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10 } = req.query; // Parámetros de consulta con valores predeterminados
+    const { page = 1, pageSize = 10, random = false } = req.query; // Parámetros de consulta con valores predeterminados
     const limit = parseInt(pageSize);
     const offset = (parseInt(page) - 1) * limit;
+
+    const order = random ? Sequelize.literal('RAND()') : [['id', 'ASC']]; // Ordenar aleatoriamente si random es verdadero
 
     const { count, rows } = await Producto.findAndCountAll({
       include: [{ model: Imagen, as: 'imagenes' }],
       limit,
       offset,
+      order: [order], // Aplicar el orden correspondiente
     });
 
     res.json({
@@ -26,6 +30,8 @@ exports.getAllProductos = async (req, res) => {
     res.status(500).json({ error: "Error al obtener productos " + error });
   }
 };
+
+
 
 exports.getProductoById = async (req, res) => {
   try {
