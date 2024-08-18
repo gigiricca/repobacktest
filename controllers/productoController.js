@@ -3,6 +3,7 @@ const Producto = require("../models/producto");
 const Imagen = require("../models/imagen");
 const sequelize = require("../config/database");
 const Sequelize = require('sequelize');
+const Caracteristica = require("../models/caracteristica");
 
 exports.getAllProductos = async (req, res) => {
   try {
@@ -36,7 +37,7 @@ exports.getAllProductos = async (req, res) => {
 exports.getProductoById = async (req, res) => {
   try {
     const { id } = req.params;
-    const producto = await Producto.findByPk(id, { include: [{ model: Imagen, as: 'imagenes' }] });
+    const producto = await Producto.findByPk(id, { include: [{ model: Imagen, as: 'imagenes' },{ model: Caracteristica, as: 'caracteristicas' }] });
 
     if (!producto) {
       return res.status(404).json({ error: "Producto no encontrado" });
@@ -94,7 +95,7 @@ exports.updateProducto = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const { nombre, descripcion, categoria_id, precio, imagenes } = req.body;
+    const { nombre, descripcion, categoria_id, precio, imagenes, caracteristicas } = req.body;
 
     const producto = await Producto.findByPk(id, { transaction: t });
 
@@ -103,18 +104,29 @@ exports.updateProducto = async (req, res) => {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
+    // Actualizar el producto
     await producto.update({ nombre, descripcion, categoria_id, precio }, { transaction: t });
 
+    // Actualizar las imágenes del producto
     if (imagenes && imagenes.length > 0) {
       await Imagen.destroy({ where: { productoId: id }, transaction: t });
       const imagenPromises = imagenes.map(url => Imagen.create({ url, productoId: id }, { transaction: t }));
       await Promise.all(imagenPromises);
     }
 
+    // Actualizar las características del producto
+    if (caracteristicas && caracteristicas.length > 0) {
+      await Caracteristica.destroy({ where: { productoId: id }, transaction: t });
+      const caracteristicaPromises = caracteristicas.map(({ nombre, valor, icono }) => 
+        Caracteristica.create({ nombre, valor, icono, productoId: id }, { transaction: t })
+      );
+      await Promise.all(caracteristicaPromises);
+    }
+
     await t.commit();
     res.json(producto);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: "Error al actualizar producto" });
+    res.status(500).json({ error: "Error al actualizar producto"+ error });
   }
 };
