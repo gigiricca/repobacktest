@@ -37,7 +37,12 @@ exports.crearUsuario = async(req, res) => {
         return res.status(400).json({ message: "Contraseña incorrecta" });
       }
 
-      res.json({ message: "Inicio de sesión exitoso", usuario });
+      res.json({ 
+        id: usuario.id, 
+        nombre: usuario.nombre, 
+        apellido: usuario.apellido,
+        email: usuario.email
+      });
     } catch (error) {
       res.status(500).json({ message: "Error al iniciar sesión", error });
     }
