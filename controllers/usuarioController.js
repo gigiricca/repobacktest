@@ -3,7 +3,7 @@ const Usuario = require("../models/usuario");
 
 exports.crearUsuario = async(req, res) => {
     try {
-      const { nombre, email, password } = req.body;
+      const { nombre, apellido, email, password } = req.body;
 
       // Verificar si el usuario ya existe
       const usuarioExistente = await Usuario.findOne({ where: { email } });
@@ -12,7 +12,7 @@ exports.crearUsuario = async(req, res) => {
       }
 
       // Crear un nuevo usuario
-      const nuevoUsuario = await Usuario.create({ nombre, email, password });
+      const nuevoUsuario = await Usuario.create({ nombre, apellido, email, password });
 
       res.status(201).json(nuevoUsuario);
     } catch (error) {

@@ -12,8 +12,8 @@ app.use("/api", routes);
 const PORT = process.env.PORT || 3000;
 
 // Sincronizar modelos y luego iniciar el servidor
-sequelize
-  .sync()
+sequelize.
+  sync({ alter: true })
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Servidor escuchando en el puerto ${PORT}`);
