@@ -4,7 +4,6 @@ const router = express.Router();
 const productoController = require("../controllers/productoController");
 const categoriaController = require('../controllers/categoriaController.js');
 const usuarioController = require('../controllers/usuarioController.js');
-const administradorController = require('../controllers/administradorController.js');
 
 // Rutas para productos
 router.get("/productos", productoController.getAllProductos); //Query params page y pageSize
@@ -22,8 +21,5 @@ router.delete('/categorias/:id', categoriaController.deleteCategoria);
 // Rutas para usuarios
 router.post('/register', usuarioController.crearUsuario);
 router.post('/login', usuarioController.login);
-
-router.post('/adminLogin', administradorController.adminLogin);
-
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const bcrypt = require("bcrypt");
+const Rol = require("./rol");
 
 const Usuario = sequelize.define(
   "Usuario",
@@ -25,6 +26,14 @@ const Usuario = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    rolId: { // Foreign key
+      type: DataTypes.INTEGER,
+      defaultValue: 2, // Valor predeterminado 2 (Usuario)
+      references: {
+        model: Rol,
+        key: 'id',
+      },
+    },
   },
   {
     hooks: {
@@ -34,10 +43,12 @@ const Usuario = sequelize.define(
           usuario.password = await bcrypt.hash(usuario.password, salt);
         }
       },
-      // Puedes agregar más hooks si es necesario, como beforeUpdate, etc.
     },
-    timestamps: false, // Esto lo mantienes si no quieres los campos createdAt y updatedAt
+    timestamps: false,
   }
 );
+
+// Establecer la relación
+Usuario.belongsTo(Rol, { foreignKey: 'rolId' });
 
 module.exports = Usuario;
