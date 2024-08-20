@@ -41,9 +41,45 @@ exports.crearUsuario = async(req, res) => {
         id: usuario.id, 
         nombre: usuario.nombre, 
         apellido: usuario.apellido,
-        email: usuario.email
+        email: usuario.email,
+        rolId: usuario.rolId
       });
     } catch (error) {
       res.status(500).json({ message: "Error al iniciar sesión", error });
     }
   };
+
+  exports.obtenerUsuarios = async(req, res) => {
+    try {
+        const usuarios = await Usuario.findAll({
+            attributes: ['id', 'nombre', 'apellido', 'email', 'rolId'],
+            include: {
+                model: Rol,
+                attributes: ['nombre'],
+            }
+        });
+        res.json(usuarios);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los usuarios", error });
+    }
+};
+
+exports.cambiarRol = async(req, res) => {
+  try {
+      const { id, rolId } = req.body;
+
+      // Verificar si el usuario existe
+      const usuario = await Usuario.findByPk(id);
+      if (!usuario) {
+          return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      // Actualizar el rol del usuario
+      usuario.rolId = rolId;
+      await usuario.save();
+
+      res.json({ message: "Rol actualizado exitosamente" });
+  } catch (error) {
+      res.status(500).json({ message: "Error al actualizar el rol del usuario", error });
+  }
+};

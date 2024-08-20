@@ -21,5 +21,7 @@ router.delete('/categorias/:id', categoriaController.deleteCategoria);
 // Rutas para usuarios
 router.post('/register', usuarioController.crearUsuario);
 router.post('/login', usuarioController.login);
+router.get('/usuarios', usuarioController.obtenerUsuarios); 
+router.put('/usuarios/cambiar-rol', usuarioController.cambiarRol);
 
 module.exports = router;
