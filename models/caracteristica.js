@@ -14,6 +14,14 @@ const Caracteristica = sequelize.define("Caracteristica", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  productoId: {  
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'productos',
+      key: 'id'
+    }
+  }
 }, 
 {
 timestamps: false,
