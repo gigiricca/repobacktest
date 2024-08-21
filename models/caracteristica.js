@@ -17,7 +17,7 @@ const Caracteristica = sequelize.define("Caracteristica", {
 }, 
 {
 timestamps: false,
-tableName: 'Caracteristica'
+tableName: 'caracteristicas'
 });
 
 module.exports = Caracteristica;
