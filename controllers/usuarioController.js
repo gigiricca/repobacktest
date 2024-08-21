@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const Usuario = require("../models/usuario");
+const Rol = require("../models/rol");
 
 exports.crearUsuario = async(req, res) => {
     try {
