@@ -1,8 +1,9 @@
 // controllers/producto.js
 const Producto = require("../models/producto");
 const Imagen = require("../models/imagen");
+const Usuario = require("../models/usuario");
 const sequelize = require("../config/database");
-const Sequelize = require('sequelize');
+const Sequelize = require("sequelize");
 const Caracteristica = require("../models/caracteristica");
 
 exports.getAllProductos = async (req, res) => {
@@ -11,10 +12,10 @@ exports.getAllProductos = async (req, res) => {
     const limit = parseInt(pageSize);
     const offset = (parseInt(page) - 1) * limit;
 
-    const order = random ? Sequelize.literal('RAND()') : [['id', 'ASC']]; // Ordenar aleatoriamente si random es verdadero
+    const order = random ? Sequelize.literal("RAND()") : [["id", "ASC"]]; // Ordenar aleatoriamente si random es verdadero
 
     const { count, rows } = await Producto.findAndCountAll({
-      include: [{ model: Imagen, as: 'imagenes' }],
+      include: [{ model: Imagen, as: "imagenes" }],
       limit,
       offset,
       order: [order], // Aplicar el orden correspondiente
@@ -32,12 +33,15 @@ exports.getAllProductos = async (req, res) => {
   }
 };
 
-
-
 exports.getProductoById = async (req, res) => {
   try {
     const { id } = req.params;
-    const producto = await Producto.findByPk(id, { include: [{ model: Imagen, as: 'imagenes' },{ model: Caracteristica, as: 'caracteristicas' }] });
+    const producto = await Producto.findByPk(id, {
+      include: [
+        { model: Imagen, as: "imagenes" },
+        { model: Caracteristica, as: "caracteristicas" },
+      ],
+    });
 
     if (!producto) {
       return res.status(404).json({ error: "Producto no encontrado" });
@@ -54,10 +58,32 @@ exports.createProducto = async (req, res) => {
   try {
     const { nombre, descripcion, categoria_id, precio, imagenes } = req.body;
 
-    const producto = await Producto.create({ nombre, descripcion, categoria_id, precio }, { transaction: t });
+    // Verificar si el usuario es administrador
+    const userId = req.headers['x-user-id'];
+    const usuario = await Usuario.findByPk(userId);
+    if (usuario.rolId !== 1) {
+      await t.rollback();
+      return res.status(403).json({ error: "Acceso denegado. Requiere rol de administrador." });
+    }
+    
+    // Verificar si el nombre ya existe
+    const existingProducto = await Producto.findOne({ where: { nombre } });
+    if (existingProducto) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ error: "El nombre del producto ya está en uso" });
+    }
+
+    const producto = await Producto.create(
+      { nombre, descripcion, categoria_id, precio },
+      { transaction: t }
+    );
 
     if (imagenes && imagenes.length > 0) {
-      const imagenPromises = imagenes.map(url => Imagen.create({ url, productoId: producto.id }, { transaction: t }));
+      const imagenPromises = imagenes.map((url) =>
+        Imagen.create({ url, productoId: producto.id }, { transaction: t })
+      );
       await Promise.all(imagenPromises);
     }
 
@@ -65,7 +91,7 @@ exports.createProducto = async (req, res) => {
     res.status(201).json(producto);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: "Error al crear producto" });
+    res.status(500).json({ error: "Error al crear producto: "+error });
   }
 };
 
@@ -87,7 +113,7 @@ exports.deleteProducto = async (req, res) => {
     res.status(204).send(); // No Content
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: "Error al borrar producto" });
+    res.status(500).json({ error: "Error al borrar producto: "+error });
   }
 };
 
@@ -95,7 +121,14 @@ exports.updateProducto = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const { nombre, descripcion, categoria_id, precio, imagenes, caracteristicas } = req.body;
+    const {
+      nombre,
+      descripcion,
+      categoria_id,
+      precio,
+      imagenes,
+      caracteristicas,
+    } = req.body;
 
     const producto = await Producto.findByPk(id, { transaction: t });
 
@@ -105,20 +138,32 @@ exports.updateProducto = async (req, res) => {
     }
 
     // Actualizar el producto
-    await producto.update({ nombre, descripcion, categoria_id, precio }, { transaction: t });
+    await producto.update(
+      { nombre, descripcion, categoria_id, precio },
+      { transaction: t }
+    );
 
     // Actualizar las imágenes del producto
     if (imagenes && imagenes.length > 0) {
       await Imagen.destroy({ where: { productoId: id }, transaction: t });
-      const imagenPromises = imagenes.map(url => Imagen.create({ url, productoId: id }, { transaction: t }));
+      const imagenPromises = imagenes.map((url) =>
+        Imagen.create({ url, productoId: id }, { transaction: t })
+      );
       await Promise.all(imagenPromises);
     }
 
     // Actualizar las características del producto
     if (caracteristicas && caracteristicas.length > 0) {
-      await Caracteristica.destroy({ where: { productoId: id }, transaction: t });
-      const caracteristicaPromises = caracteristicas.map(({ nombre, valor, icono }) => 
-        Caracteristica.create({ nombre, valor, icono, productoId: id }, { transaction: t })
+      await Caracteristica.destroy({
+        where: { productoId: id },
+        transaction: t,
+      });
+      const caracteristicaPromises = caracteristicas.map(
+        ({ nombre, valor, icono }) =>
+          Caracteristica.create(
+            { nombre, valor, icono, productoId: id },
+            { transaction: t }
+          )
       );
       await Promise.all(caracteristicaPromises);
     }
@@ -127,6 +172,6 @@ exports.updateProducto = async (req, res) => {
     res.json(producto);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: "Error al actualizar producto"+ error });
+    res.status(500).json({ error: "Error al actualizar producto" + error });
   }
 };

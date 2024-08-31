@@ -34,6 +34,7 @@ exports.crearUsuario = async(req, res) => {
 
       // Verificar la contraseña
       const isMatch = await bcrypt.compare(password, usuario.password);
+      console.log("password: " + password);
       if (!isMatch) {
         return res.status(400).json({ message: "Contraseña incorrecta" });
       }
