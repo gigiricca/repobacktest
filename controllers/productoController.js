@@ -73,13 +73,11 @@ exports.createProducto = async (req, res) => {
       return res.status(400).json({ error: "El nombre del producto ya está en uso" });
     }
 
-    // Crear el producto
     const producto = await Producto.create(
       { nombre, descripcion, categoria_id, precio },
       { transaction: t }
     );
 
-    // Crear imágenes asociadas al producto, si existen
     if (imagenes && imagenes.length > 0) {
       const imagenPromises = imagenes.map((url) =>
         Imagen.create({ url, productoId: producto.id }, { transaction: t })
@@ -87,14 +85,9 @@ exports.createProducto = async (req, res) => {
       await Promise.all(imagenPromises);
     }
 
-    // Crear características asociadas al producto, si existen
     if (caracteristicas && caracteristicas.length > 0) {
-      const caracteristicaPromises = caracteristicas.map(
-        ({ nombre, valor, icono }) =>
-          Caracteristica.create(
-            { nombre, valor, icono, productoId: producto.id },
-            { transaction: t }
-          )
+      const caracteristicaPromises = caracteristicas.map(({ id, valor }) =>
+        producto.addCaracteristica(id, { through: { valor }, transaction: t })
       );
       await Promise.all(caracteristicaPromises);
     }
@@ -106,7 +99,6 @@ exports.createProducto = async (req, res) => {
     res.status(500).json({ error: "Error al crear producto: " + error });
   }
 };
-
 
 exports.deleteProducto = async (req, res) => {
   const t = await sequelize.transaction();
