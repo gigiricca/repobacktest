@@ -11,6 +11,8 @@ router.get('/productos/:id', productoController.getProductoById);
 router.post("/productos", productoController.createProducto);
 router.put('/productos/:id', productoController.updateProducto);
 router.delete('/productos/:id', productoController.deleteProducto);
+router.post("/search", productoController.searchProductos);
+router.get('/keywords', productoController.getDistinctKeywords);
 
 // Rutas para categorias
 router.get('/categorias', categoriaController.getAllCategorias);

@@ -22,6 +22,10 @@ const Producto = sequelize.define("producto", {
     type: DataTypes.DOUBLE,
     allowNull: true,
   },
+  keyword: {
+    type: DataTypes.STRING, 
+    allowNull: true,
+  },
 }, {
   timestamps: false
 });

@@ -5,6 +5,7 @@ const Usuario = require("../models/usuario");
 const sequelize = require("../config/database");
 const Sequelize = require("sequelize");
 const Caracteristica = require("../models/caracteristica");
+const { Op } = require('sequelize');
 
 exports.getAllProductos = async (req, res) => {
   try {
@@ -56,7 +57,7 @@ exports.getProductoById = async (req, res) => {
 exports.createProducto = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const { nombre, descripcion, categoria_id, precio, imagenes, caracteristicas } = req.body;
+    const { nombre, descripcion, categoria_id, precio, imagenes, caracteristicas, keywords } = req.body;
 
     // Verificar si el usuario es administrador
     const userId = req.headers['x-user-id'];
@@ -73,11 +74,13 @@ exports.createProducto = async (req, res) => {
       return res.status(400).json({ error: "El nombre del producto ya está en uso" });
     }
 
+    // Crear el producto con keywords
     const producto = await Producto.create(
-      { nombre, descripcion, categoria_id, precio },
+      { nombre, descripcion, categoria_id, precio, keywords }, // Incluyendo keywords
       { transaction: t }
     );
 
+    // Crear las imágenes asociadas al producto
     if (imagenes && imagenes.length > 0) {
       const imagenPromises = imagenes.map((url) =>
         Imagen.create({ url, productoId: producto.id }, { transaction: t })
@@ -85,6 +88,7 @@ exports.createProducto = async (req, res) => {
       await Promise.all(imagenPromises);
     }
 
+    // Asociar características al producto
     if (caracteristicas && caracteristicas.length > 0) {
       const caracteristicaPromises = caracteristicas.map(({ id, valor }) =>
         producto.addCaracteristica(id, { through: { valor }, transaction: t })
@@ -180,3 +184,56 @@ exports.updateProducto = async (req, res) => {
     res.status(500).json({ error: "Error al actualizar producto" + error });
   }
 };
+
+exports.searchProductos = async (req, res) => {
+  try {
+    const { query } = req.query; // Se espera un parámetro de consulta llamado "query"
+
+    // Crear una condición de búsqueda que busque en los campos nombre, descripción y keywords
+    const whereCondition = {
+      [Op.or]: [
+        { nombre: { [Op.like]: `%${query}%` } },
+        { descripcion: { [Op.like]: `%${query}%` } },
+        { keyword: { [Op.like]: `%${query}%` } },
+      ],
+    };
+
+    // Buscar productos que cumplan con la condición
+    const productos = await Producto.findAll({
+      where: whereCondition,
+      include: [
+        { model: Imagen, as: 'imagenes' },
+        { model: Caracteristica, as: 'caracteristicas' },
+      ],
+    });
+
+    // Devolver los productos encontrados
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al buscar productos: ' + error });
+  }
+};
+
+exports.getDistinctKeywords = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    // Buscar productos que coincidan con la query
+    const productos = await Producto.findAll({
+      where: {
+        keyword: {
+          [Op.like]: `%${query}%` // Usar iLike para búsqueda insensible a mayúsculas/minúsculas
+        }
+      }
+    });
+
+    // Extraer y deduplicar las keywords
+    const allKeywords = productos.flatMap(producto => producto.keyword.split(','));
+    const distinctKeywords = [...new Set(allKeywords)];
+
+    res.json({ keywords: distinctKeywords });
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener keywords: " + error });
+  }
+};
+
