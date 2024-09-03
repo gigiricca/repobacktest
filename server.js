@@ -22,3 +22,8 @@ sequelize.
   .catch((err) => {
     console.error("Error al sincronizar la base de datos:", err);
   });
+
+  // Definir una ruta para manejar solicitudes a "/"
+app.get('/', (req, res) => {
+  res.send('Bienvenido a la API'); 
+});
