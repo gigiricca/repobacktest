@@ -30,4 +30,8 @@ router.put('/usuarios/cambiar-rol', usuarioController.cambiarRol);
 // Rutas para categorias
 router.get('/caracteristicas', caracteristicaController.getAllCaracteristicas);
 
+//Rutas para favoritos
+router.post("/favoritos", usuarioController.toggleFavorito);
+router.get("/favoritos/:usuarioId", usuarioController.obtenerFavoritos);
+
 module.exports = router;

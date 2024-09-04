@@ -1,6 +1,8 @@
 const bcrypt = require("bcrypt");
 const Usuario = require("../models/usuario");
 const Rol = require("../models/rol");
+const Favorito = require("../models/favorito");
+const Producto = require("../models/producto");
 
 exports.crearUsuario = async(req, res) => {
     try {
@@ -85,3 +87,45 @@ exports.cambiarRol = async(req, res) => {
       res.status(500).json({ message: "Error al actualizar el rol del usuario", error });
   }
 };
+
+// Marcar o desmarcar producto como favorito
+exports.toggleFavorito = async (req, res) => {
+  const { usuarioId, productoId } = req.body;
+
+  try {
+    // Verificar si ya existe el favorito
+    const favoritoExistente = await Favorito.findOne({ where: { usuario_id: usuarioId, producto_id: productoId } });
+
+    if (favoritoExistente) {
+      // Si existe, eliminarlo (desmarcar favorito)
+      await favoritoExistente.destroy();
+      return res.json({ message: "Producto eliminado de favoritos" });
+    } else {
+      // Si no existe, crear el favorito (marcar como favorito)
+      await Favorito.create({ usuario_id: usuarioId, producto_id: productoId });
+      return res.json({ message: "Producto agregado a favoritos" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error al manejar el favorito", error });
+  }
+};
+
+// Obtener la lista de favoritos del usuario
+exports.obtenerFavoritos = async (req, res) => {
+  const { usuarioId } = req.params;
+
+  try {
+    const usuario = await Usuario.findByPk(usuarioId, {
+      include: [{ model: Producto, as: 'favoritos' }]
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.json(usuario.favoritos);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener los favoritos", error });
+  }
+};
+
