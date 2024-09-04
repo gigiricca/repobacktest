@@ -22,7 +22,7 @@ const Producto = sequelize.define("producto", {
     type: DataTypes.DOUBLE,
     allowNull: true,
   },
-  keyword: {
+  keywords: {
     type: DataTypes.STRING, 
     allowNull: true,
   },
