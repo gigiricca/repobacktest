@@ -137,6 +137,7 @@ exports.updateProducto = async (req, res) => {
       precio,
       imagenes,
       caracteristicas,
+      keywords,
     } = req.body;
 
     const producto = await Producto.findByPk(id, { transaction: t });
@@ -148,7 +149,7 @@ exports.updateProducto = async (req, res) => {
 
     // Actualizar el producto
     await producto.update(
-      { nombre, descripcion, categoria_id, precio },
+      { nombre, descripcion, categoria_id, precio, keywords },
       { transaction: t }
     );
 
