@@ -5,7 +5,9 @@ const Usuario = require("../models/usuario");
 const sequelize = require("../config/database");
 const Sequelize = require("sequelize");
 const Caracteristica = require("../models/caracteristica");
-const { Op } = require('sequelize');
+const ProductoCaracteristica = require("../models/producto_caracteristica");
+
+const { Op } = require("sequelize");
 
 exports.getAllProductos = async (req, res) => {
   try {
@@ -57,21 +59,33 @@ exports.getProductoById = async (req, res) => {
 exports.createProducto = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const { nombre, descripcion, categoria_id, precio, imagenes, caracteristicas, keywords } = req.body;
+    const {
+      nombre,
+      descripcion,
+      categoria_id,
+      precio,
+      imagenes,
+      caracteristicas,
+      keywords,
+    } = req.body;
 
     // Verificar si el usuario es administrador
-    const userId = req.headers['x-user-id'];
+    const userId = req.headers["x-user-id"];
     const usuario = await Usuario.findByPk(userId);
     if (usuario.rolId !== 1) {
       await t.rollback();
-      return res.status(403).json({ error: "Acceso denegado. Requiere rol de administrador." });
+      return res
+        .status(403)
+        .json({ error: "Acceso denegado. Requiere rol de administrador." });
     }
-    
+
     // Verificar si el nombre ya existe
     const existingProducto = await Producto.findOne({ where: { nombre } });
     if (existingProducto) {
       await t.rollback();
-      return res.status(400).json({ error: "El nombre del producto ya está en uso" });
+      return res
+        .status(400)
+        .json({ error: "El nombre del producto ya está en uso" });
     }
 
     // Crear el producto con keywords
@@ -122,7 +136,7 @@ exports.deleteProducto = async (req, res) => {
     res.status(204).send(); // No Content
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: "Error al borrar producto: "+error });
+    res.status(500).json({ error: "Error al borrar producto: " + error });
   }
 };
 
@@ -164,17 +178,34 @@ exports.updateProducto = async (req, res) => {
 
     // Actualizar las características del producto
     if (caracteristicas && caracteristicas.length > 0) {
-      await Caracteristica.destroy({
-        where: { productoId: id },
+      // Primero, eliminar las características existentes para este producto en la tabla intermedia ProductoCaracteristica
+      await ProductoCaracteristica.destroy({
+        where: { productoId: id }, // Usar la tabla intermedia
         transaction: t,
       });
+
+      // Luego, agregar las nuevas características en la tabla intermedia
       const caracteristicaPromises = caracteristicas.map(
-        ({ nombre, valor, icono }) =>
-          Caracteristica.create(
-            { nombre, valor, icono, productoId: id },
+        async ({ nombre, valor, icono }) => {
+          // Buscar o crear la característica en la tabla Caracteristica
+          const [caracteristica] = await Caracteristica.findOrCreate({
+            where: { nombre, icono },
+            transaction: t,
+          });
+
+          // Crear la entrada en la tabla intermedia ProductoCaracteristica
+          return ProductoCaracteristica.create(
+            {
+              productoId: id,
+              caracteristicaId: caracteristica.id, // Asociar la característica al producto
+              valor: valor,
+            },
             { transaction: t }
-          )
+          );
+        }
       );
+
+      // Ejecutar todas las promesas para insertar las características
       await Promise.all(caracteristicaPromises);
     }
 
@@ -182,7 +213,7 @@ exports.updateProducto = async (req, res) => {
     res.json(producto);
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: "Error al actualizar producto" + error });
+    res.status(500).json({ error: error });
   }
 };
 
@@ -203,15 +234,15 @@ exports.searchProductos = async (req, res) => {
     const productos = await Producto.findAll({
       where: whereCondition,
       include: [
-        { model: Imagen, as: 'imagenes' },
-        { model: Caracteristica, as: 'caracteristicas' },
+        { model: Imagen, as: "imagenes" },
+        { model: Caracteristica, as: "caracteristicas" },
       ],
     });
 
     // Devolver los productos encontrados
     res.json(productos);
   } catch (error) {
-    res.status(500).json({ error: 'Error al buscar productos: ' + error });
+    res.status(500).json({ error: "Error al buscar productos: " + error });
   }
 };
 
@@ -223,13 +254,15 @@ exports.getDistinctKeywords = async (req, res) => {
     const productos = await Producto.findAll({
       where: {
         keyword: {
-          [Op.like]: `%${query}%` // Usar iLike para búsqueda insensible a mayúsculas/minúsculas
-        }
-      }
+          [Op.like]: `%${query}%`, // Usar iLike para búsqueda insensible a mayúsculas/minúsculas
+        },
+      },
     });
 
     // Extraer y deduplicar las keywords
-    const allKeywords = productos.flatMap(producto => producto.keyword.split(','));
+    const allKeywords = productos.flatMap((producto) =>
+      producto.keyword.split(",")
+    );
     const distinctKeywords = [...new Set(allKeywords)];
 
     res.json({ keywords: distinctKeywords });
@@ -237,4 +270,3 @@ exports.getDistinctKeywords = async (req, res) => {
     res.status(500).json({ error: "Error al obtener keywords: " + error });
   }
 };
-
