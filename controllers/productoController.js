@@ -178,31 +178,23 @@ exports.updateProducto = async (req, res) => {
 
     // Actualizar las características del producto
     if (caracteristicas && caracteristicas.length > 0) {
-      // Primero, eliminar las características existentes para este producto en la tabla intermedia ProductoCaracteristica
+      // Eliminar las características existentes en la tabla intermedia
       await ProductoCaracteristica.destroy({
-        where: { productoId: id }, // Usar la tabla intermedia
+        where: { productoId: id },
         transaction: t,
       });
 
-      // Luego, agregar las nuevas características en la tabla intermedia
+      // Insertar las nuevas características usando solo el id y el valor
       const caracteristicaPromises = caracteristicas.map(
-        async ({ nombre, valor, icono }) => {
-          // Buscar o crear la característica en la tabla Caracteristica
-          const [caracteristica] = await Caracteristica.findOrCreate({
-            where: { nombre, icono },
-            transaction: t,
-          });
-
-          // Crear la entrada en la tabla intermedia ProductoCaracteristica
-          return ProductoCaracteristica.create(
+        ({ id: caracteristicaId, valor }) =>
+          ProductoCaracteristica.create(
             {
               productoId: id,
-              caracteristicaId: caracteristica.id, // Asociar la característica al producto
-              valor: valor,
+              caracteristicaId, // Asociar la característica al producto usando el id
+              valor,
             },
             { transaction: t }
-          );
-        }
+          )
       );
 
       // Ejecutar todas las promesas para insertar las características
