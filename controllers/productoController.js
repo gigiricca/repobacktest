@@ -129,7 +129,13 @@ exports.deleteProducto = async (req, res) => {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
+    // Eliminar asociaciones en productos_caracteristicas
+    await ProductoCaracteristica.destroy({ where: { productoId: id }, transaction: t });
+
+    // Eliminar imágenes asociadas al producto
     await Imagen.destroy({ where: { productoId: id }, transaction: t });
+
+    // Eliminar el producto
     await producto.destroy({ transaction: t });
 
     await t.commit();
@@ -139,6 +145,7 @@ exports.deleteProducto = async (req, res) => {
     res.status(500).json({ error: "Error al borrar producto: " + error });
   }
 };
+
 
 exports.updateProducto = async (req, res) => {
   const t = await sequelize.transaction();
