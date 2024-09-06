@@ -3,6 +3,8 @@ const Usuario = require("../models/usuario");
 const Rol = require("../models/rol");
 const Favorito = require("../models/favorito");
 const Producto = require("../models/producto");
+const Imagen = require("../models/imagen");
+const Caracteristica = require("../models/caracteristica");
 
 exports.crearUsuario = async(req, res) => {
     try {
@@ -116,16 +118,24 @@ exports.obtenerFavoritos = async (req, res) => {
 
   try {
     const usuario = await Usuario.findByPk(usuarioId, {
-      include: [{ model: Producto, as: 'favoritos' }]
+      include: [
+        {
+          model: Producto, 
+          as: 'favoritos',
+          include: [
+            { model: Imagen, as: 'imagenes' },  // Incluir imágenes del producto si es necesario
+            { model: Caracteristica, as: 'caracteristicas' },  // Incluir características del producto si es necesario
+          ]
+        }
+      ]
     });
 
     if (!usuario) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res.json(usuario.favoritos);
+    res.json(usuario.favoritos); // Devuelve la lista completa de productos favoritos
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener los favoritos", error });
+    res.status(500).json({ message: "Error al obtener los favoritos" + error });
   }
 };
-
