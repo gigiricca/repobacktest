@@ -5,7 +5,16 @@ const cors = require('cors');
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+
+const cors = require('cors');
+
+// Configurar CORS de forma específica
+app.use(cors({
+    origin: 'https://www.cateringlink.store',  // Cambia esto al dominio de tu frontend en Vercel
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos HTTP permitidos
+    allowedHeaders: ['Content-Type', 'Authorization'],  // Encabezados permitidos
+    credentials: true  // Permitir envío de cookies/credenciales
+}));
 
 app.use("/api", routes);
 
