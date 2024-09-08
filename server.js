@@ -6,8 +6,6 @@ const app = express();
 
 app.use(express.json());
 
-const cors = require('cors');
-
 // Configurar CORS de forma específica
 app.use(cors({
     origin: ['https://www.cateringlink.store', 'https://cateringlink.store'], // Cambia esto al dominio de tu frontend en Vercel
