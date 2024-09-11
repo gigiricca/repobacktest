@@ -9,14 +9,14 @@ const Favorito = sequelize.define("Favorito", {
     primaryKey: true,
     autoIncrement: true,
   },
-  usuario_id: {
+  userId: {
     type: DataTypes.INTEGER,
     references: {
       model: Usuario,
       key: 'id',
     },
   },
-  producto_id: {
+  productoId: {
     type: DataTypes.INTEGER,
     references: {
       model: Producto,
