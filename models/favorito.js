@@ -30,6 +30,6 @@ const Favorito = sequelize.define("Favorito", {
 
 // Establecer las relaciones
 Usuario.belongsToMany(Producto, { through: Favorito, foreignKey: 'userId', as: 'favoritos' });
-Producto.belongsToMany(Usuario, { through: Favorito, foreignKey: 'producto_id', as: 'usuariosFavoritos' });
+Producto.belongsToMany(Usuario, { through: Favorito, foreignKey: 'productoId', as: 'usuariosFavoritos' });
 
 module.exports = Favorito;
