@@ -96,7 +96,7 @@ exports.toggleFavorito = async (req, res) => {
 
   try {
     // Verificar si ya existe el favorito
-    const favoritoExistente = await Favorito.findOne({ where: { userId: usuarioId, productoId: productoId } });
+    const favoritoExistente = await Favorito.findOne({ where: { usuario_id: usuarioId, producto_id: productoId } });
 
     if (favoritoExistente) {
       // Si existe, eliminarlo (desmarcar favorito)
@@ -104,7 +104,7 @@ exports.toggleFavorito = async (req, res) => {
       return res.json({ message: "Producto eliminado de favoritos" });
     } else {
       // Si no existe, crear el favorito (marcar como favorito)
-      await Favorito.create({ userId: usuarioId, productoId: productoId });
+      await Favorito.create({ usuario_id: usuarioId, producto_id: productoId });
       return res.json({ message: "Producto agregado a favoritos" });
     }
   } catch (error) {
